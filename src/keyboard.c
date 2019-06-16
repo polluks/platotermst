@@ -3,12 +3,10 @@
 #include "key.h"
 #include "protocol.h"
 #include "io.h"
-#include "appl.h"
 #include <mint/sysbind.h>
 #include <mint/osbind.h>
 #include <mint/ostruct.h>
 #include <gem.h>
-#include <windom.h>
 
 unsigned char ch;
 
@@ -29,8 +27,23 @@ void keyboard_out(unsigned char platoKey)
 
 void keyboard_main(int code, unsigned char shift)
 {
-
-  if (TTY)
+    unsigned char key=code>>8;
+  if (key==0x3b)
+    {
+      /* MenuEnable(); */
+    }
+  else if (key==0x44)
+    {
+      /* appl_form_quit(); */
+    }
+  else if (shift==0x08)
+    {
+      if (key==0x23) // ALT-H
+	{
+	  /* appl_hang_up(); */
+	}
+    }
+  else if (TTY)
     {
       keyboard_out_tty(code&0xff);
     }
@@ -39,22 +52,11 @@ void keyboard_main(int code, unsigned char shift)
       // Ctrl-Shift pressed
       keyboard_out(ctrl_shift_key_to_pkey[code&0xff]);
     }
-  else if (shift==0x08)
-    {
-      if ((code>>8)==16)
-	{
-	  ApplWrite( _AESapid, AP_TERM,0,0,0,0,0);
-	}
-    }
   else
     {
       // no modifiers
       keyboard_out(key_to_pkey[code&0xff]);
     }
-}
-
-void keyboard_clear(void)
-{
 }
 
 void keyboard_out_tty(char ch)

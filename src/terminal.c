@@ -13,10 +13,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include "terminal.h"
 #include "screen.h"
-#include "appl.h"
-#include "splash.h"
 
 /**
  * ASCII Features to return in Features
@@ -25,6 +24,11 @@
 #define ASC_ZPCKEYS     0x02
 #define ASC_ZKERMIT     0x04
 #define ASC_ZWINDOW     0x08
+
+padByte terminal_buffer[TERMINAL_BUFFER_SIZE];
+short terminal_buffer_size=0;
+
+extern short work_out[57];
 
 /**
  * protocol.c externals
@@ -47,28 +51,13 @@ extern unsigned char FONT_SIZE_Y;
 extern unsigned char already_started;
 
 /**
- * appl.c externals
- */
-extern int16_t appl_atari_hi_res;
-extern int16_t appl_atari_med_res;      // Are we in Atari Med Res (640x200?)
-extern int16_t appl_atari_low_res;      // Are we in Atari Low Res (640x200?)
-extern int16_t appl_atari_tt_med_res;   // Are we in Atari TT Med Res (640x480?)
-
-/**
  * terminal_init()
  * Initialize terminal state
  */
 void terminal_init(void)
 {
+  terminal_buffer_clear();
   terminal_set_tty();
-}
-
-/**
- * terminal_show_greeting(void) - Show greeting
- */
-void terminal_show_greeting(void)
-{
-  ShowPLATO((padByte *)splash,sizeof(splash));
 }
 
 /**
@@ -276,14 +265,17 @@ extern unsigned short fontm23[2048];
 
 void terminal_char_load(padWord charNum, charData theChar)
 {
-  if (appl_atari_hi_res==TRUE)
-    terminal_char_load_hires(charNum,theChar);
-  else if (appl_atari_low_res==TRUE)
-    terminal_char_load_lores(charNum,theChar);
-  else if (appl_atari_med_res==TRUE)
-    terminal_char_load_medres(charNum,theChar);
-  else if (appl_atari_tt_med_res==TRUE)
+  short width=work_out[0];
+  short height=work_out[1];
+
+  if (width==639 && height==479)
     terminal_char_load_ttmedres(charNum,theChar);
+  else if (width==639 && height==399)
+    terminal_char_load_hires(charNum,theChar);
+  else if (width==639 && height==199)
+    terminal_char_load_medres(charNum,theChar);
+  else if (width==319 && height==199)
+    terminal_char_load_lores(charNum,theChar);
   else
     terminal_char_load_fullres(charNum,theChar);
 }
@@ -414,21 +406,20 @@ void terminal_char_load_ttmedres(padWord charNum, charData theChar)
     }
 
   // OR pixel rows together
-  fontm23[(charNum*15)+0]=char_data[0]<<8;
-  fontm23[(charNum*15)+1]=char_data[1]<<8;
-  fontm23[(charNum*15)+2]=char_data[2]<<8;
-  fontm23[(charNum*15)+3]=char_data[3]<<8;
-  fontm23[(charNum*15)+4]=char_data[4]<<8;
-  fontm23[(charNum*15)+5]=char_data[5]<<8;
-  fontm23[(charNum*15)+6]=char_data[6]<<8;
-  fontm23[(charNum*15)+7]=char_data[7]<<8;
-  fontm23[(charNum*15)+8]=char_data[8]<<8;
-  fontm23[(charNum*15)+9]=char_data[9]<<8;
-  fontm23[(charNum*15)+10]=char_data[10]<<8;
-  fontm23[(charNum*15)+11]=char_data[11]<<8;
-  fontm23[(charNum*15)+12]=char_data[12]<<8;
-  fontm23[(charNum*15)+13]=char_data[13]<<8;
-  fontm23[(charNum*15)+14]=char_data[14]|char_data[15]<<8;
+  fontm23[(charNum*14)+0]=char_data[0]<<8;
+  fontm23[(charNum*14)+1]=char_data[1]<<8;
+  fontm23[(charNum*14)+2]=char_data[2]<<8;
+  fontm23[(charNum*14)+3]=char_data[3]<<8;
+  fontm23[(charNum*14)+4]=char_data[4]<<8;
+  fontm23[(charNum*14)+5]=char_data[5]<<8;
+  fontm23[(charNum*14)+6]=char_data[6]<<8;
+  fontm23[(charNum*14)+7]=char_data[7]<<8;
+  fontm23[(charNum*14)+8]=char_data[8]<<8;
+  fontm23[(charNum*14)+9]=char_data[9]<<8;
+  fontm23[(charNum*14)+10]=char_data[10]<<8;
+  fontm23[(charNum*14)+11]=char_data[11]<<8;
+  fontm23[(charNum*14)+12]=char_data[12]<<8;
+  fontm23[(charNum*14)+13]=(char_data[13]|char_data[14])<<8;
 }
 
 void terminal_char_load_fullres(padWord charnum, charData theChar)
@@ -450,4 +441,21 @@ void terminal_char_load_fullres(padWord charnum, charData theChar)
 
   // and...that's it, really. :)
   
+}
+
+/**
+ * terminal_buffer_clear - Clear the terminal buffer
+ */
+void terminal_buffer_clear(void)
+{
+  terminal_buffer_size=0;
+  memset(terminal_buffer,0,TERMINAL_BUFFER_SIZE);
+}
+
+/**
+ * terminal_done - deallocate terminal buffer
+ */
+void terminal_done(void)
+{
+  terminal_buffer_clear();
 }

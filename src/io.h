@@ -18,6 +18,8 @@
  */
 void io_init(void);
 
+void io_configure(void);
+
 /**
  * io_init_funcptrs() - Set up I/O function pointers
  */
@@ -43,6 +45,10 @@ void io_main(void);
  */
 void io_recv_serial(void);
 
+/**
+ * Hang up
+ */
+void io_hang_up(void);
 
 /**
  * io_done() - Called to close I/O

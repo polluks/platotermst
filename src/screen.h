@@ -12,10 +12,21 @@
 
 #include <stdbool.h>
 #include "protocol.h"
-#include "screen_queue.h"
+#include "window.h"
 
 #define FGBG_FOREGROUND 0
 #define FGBG_BACKGROUND 1
+
+/**
+ * Restore VDI palette
+ */
+void screen_restore_vdi_palette(void);
+
+struct PLATOTermWindowData
+{
+  padByte* platoData;
+  short platoLen;
+};
 
 /**
  * screen_init() - Set up the screen
@@ -96,22 +107,22 @@ void screen_clear(void);
 /**
  * screen_block_draw(Coord1, Coord2) - Perform a block fill from Coord1 to Coord2
  */
-void screen_block_draw(padPt* Coord1, padPt* Coord2, bool queue);
+void screen_block_draw(padPt* Coord1, padPt* Coord2);
 
 /**
  * screen_dot_draw(Coord) - Plot a mode 0 pixel
  */
-void screen_dot_draw(padPt* Coord, bool queue);
+void screen_dot_draw(padPt* Coord);
 
 /**
  * screen_line_draw(Coord1, Coord2) - Draw a mode 1 line
  */
-void screen_line_draw(padPt* Coord1, padPt* Coord2, bool queue);
+void screen_line_draw(padPt* Coord1, padPt* Coord2);
 
 /**
  * screen_char_draw(Coord, ch, count) - Output buffer from ch* of length count as PLATO characters
  */
-void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count, bool queue);
+void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count);
 
 /**
  * screen_tty_char - Called to plot chars when in tty mode
@@ -123,11 +134,6 @@ void screen_tty_char(padByte theChar);
  * Close down TGI
  */
 void screen_done(void);
-
-/**
- * Do next redraw
- */
-void screen_next_redraw(DrawElement* element);
 
 /**
  * screen_redraw()
@@ -157,6 +163,23 @@ void screen_background(padRGB* theColor);
 /**
  * Paint
  */
-void screen_paint(padPt* Coord, bool queue);
+void screen_paint(padPt* Coord);
+
+void screen_palette_dump(void);
+
+/**
+ * Show ready prompt
+ */
+void screen_show_ready(void);
+
+/**
+ * Window draw callback
+ */
+void screen_draw(struct window* wi, short x, short y, short w, short h);
+
+/**
+ * Window delete callback
+ */
+void screen_delete(struct window* wi);
 
 #endif /* SCREEN_H */

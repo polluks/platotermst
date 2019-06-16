@@ -14,6 +14,7 @@
 
 #include <stdbool.h>
 #include "protocol.h"
+#include "terminal.h"
 
 #define	BSIZE	64
 
@@ -52,14 +53,14 @@ extern padByte terminal_ext_in(void);
 extern void screen_wait(void);
 extern void screen_beep(void);
 extern void io_send_byte(unsigned char b);
-extern void screen_block_draw(padPt* Coord1, padPt* Coord2, bool queue);
-extern void screen_dot_draw(padPt* Coord, bool queue);
-extern void screen_line_draw(padPt* Coord1, padPt* Coord2, bool queue);
-extern void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count, bool queue);
+extern void screen_block_draw(padPt* Coord1, padPt* Coord2);
+extern void screen_dot_draw(padPt* Coord);
+extern void screen_line_draw(padPt* Coord1, padPt* Coord2);
+extern void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count);
 extern void screen_tty_char(padByte theChar);
 extern void screen_foreground(padRGB* theColor);
 extern void screen_background(padRGB* theColor);
-extern void screen_paint(padPt* Coord, bool queue);
+extern void screen_paint(padPt* Coord);
 extern void terminal_mem_load(padWord addr, padWord value);
 extern void terminal_char_load(padWord charnum, charData theChar);
 extern void terminal_mode_5(padWord value);
@@ -438,8 +439,9 @@ Blockx (void)
   else
     {
       LoadCoordx (&NewCoord);
-      screen_block_draw (&CurCoord, &NewCoord, true);
+      screen_block_draw (&CurCoord, &NewCoord);
       SubMode = 0;
+      CurCoord.y-=15; // s0ascers 3.2.3.1.2.5, last paragraph.
     }
 }
 
@@ -447,7 +449,7 @@ void
 Pointx (void)
 {
   LoadCoordx (&CurCoord);
-  screen_dot_draw (&CurCoord, true);
+  screen_dot_draw (&CurCoord);
 }
 
 void
@@ -465,7 +467,7 @@ Linex (void)
       OldCoord.y = CurCoord.y;
       OldCoord.x = CurCoord.x;
       LoadCoordx (&CurCoord);
-      screen_line_draw (&OldCoord, &CurCoord, true);
+      screen_line_draw (&OldCoord, &CurCoord);
     }
 }
 
@@ -478,7 +480,7 @@ Alphax (void)
   HTx ();
   if (charCount >= BSIZE)
     {
-      screen_char_draw (&charCoord, charBuff, charCount, true);
+      screen_char_draw (&charCoord, charBuff, charCount);
       charCount = 0;
     }
 }
@@ -655,7 +657,7 @@ GoMode (void)
       screen_background(&theColor);
       break;
     case mPaint:
-      screen_paint(&CurCoord,true);
+      screen_paint(&CurCoord);
       break;
     }
   CMode = PMode;
@@ -780,6 +782,7 @@ ShowPLATO (padByte *buff, unsigned short count)
   while (count--)
     {
       theChar = *buff++;
+      // Save in terminal buffer.
       if (lastChar==0xFF && theChar==0xFF)
 	{
 	  // Drop this character, it is an escaped TELNET IAC.
@@ -921,7 +924,7 @@ ShowPLATO (padByte *buff, unsigned short count)
 	    {
 	      if (charCount > 0)
 		{
-		  screen_char_draw (&charCoord, charBuff, charCount, true);
+		  screen_char_draw (&charCoord, charBuff, charCount);
 		  charCount = 0;
 		}
 	      switch (theChar)
@@ -970,7 +973,7 @@ ShowPLATO (padByte *buff, unsigned short count)
     }
   if (charCount > 0)
     {
-      screen_char_draw (&charCoord, charBuff, charCount, true);
+      screen_char_draw (&charCoord, charBuff, charCount);
       charCount = 0;
     }
 }
